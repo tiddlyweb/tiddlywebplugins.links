@@ -1,28 +1,34 @@
-import re
+"""
+Routines for maintain a links database about links
+between tiddlers. Managed as a forward links database
+but used as a backlinks database.
+"""
+
 import sys
 from pyparsing import Literal, Word, alphanums, Regex, Optional, SkipTo
 
-space = (Literal('@').suppress() + Word(alphanums, alphanums + '-'))('space')
+SPACE = (Literal('@').suppress() + Word(alphanums, alphanums + '-'))('space')
 
-wikiword = (Regex(r'[A-Z][a-z]+(?:[A-Z][a-z]*)+')('link')
-        + Optional(space.leaveWhitespace()))
+WIKIWORD = (Regex(r'[A-Z][a-z]+(?:[A-Z][a-z]*)+')('link')
+        + Optional(SPACE.leaveWhitespace()))
 
-link = (Literal("[[").suppress() + SkipTo(']]')('link')
-        + Literal("]]").suppress() + Optional(space.leaveWhitespace()))
+LINK = (Literal("[[").suppress() + SkipTo(']]')('link')
+        + Literal("]]").suppress() + Optional(SPACE.leaveWhitespace()))
 
 # What we care about in the content are links, or wikiwords, or bare
 # spaces.
-content = link ^ wikiword ^ space
+CONTENT = LINK ^ WIKIWORD ^ SPACE
+
 
 def record_link(link):
     """
     Process a link token into a target and space tuple.
     """
-    token, start, end = link
+    token, _, _ = link
     link = token.get('link')
     space = token.get('space', [None])
     if link and '|' in link:
-        label, target = link.split('|', 1)
+        _, target = link.split('|', 1)
     elif link:
         target = link
     else:
@@ -43,8 +49,8 @@ def process_data(data):
     """
     links = []
 
-    for c in content.scanString(data):
-        links.append(record_link(c))
+    for token in CONTENT.scanString(data):
+        links.append(record_link(token))
 
     return links
 
