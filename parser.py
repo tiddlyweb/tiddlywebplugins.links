@@ -2,45 +2,45 @@ import re
 import sys
 from pyparsing import *
 
-space = '@' + Word(alphanums + '-')
+space = (Literal('@').suppress() + Word(alphanums, alphanums + '-'))('space')
 
-wikiword = (Regex(r'[A-Z][a-z]+([A-Z][a-z]+)+', flags=re.UNICODE) + Optional(space)('link')
+wikiword = Regex(r'[A-Z][a-z]+([A-Z][a-z]+)+', flags=re.UNICODE)('link') + Optional(space)
 
-link = ((Literal("[[").suppress() + SkipTo(']]')
-        + Literal("]]").suppress()) + Options(space))('link')
+link = (Literal("[[").suppress() + SkipTo(']]')('link')
+        + Literal("]]").suppress()) + Optional(space)
 
-def record_free_link(link):
+def record_link(link):
     """
     Split a free link into lable and target
     """
     token, start, end = link
-    token = token[0]
-    if '|' in token:
-        label, target = token.split('|', 1)
+    link = token.get('link')
+    space = token.get('space', [None])
+    if link and '|' in link:
+        label, target = link.split('|', 1)
+    elif link:
+        target = link
     else:
-        target = token
-    return target
-
-
-def record_wiki_link(link):
-    token, start, end = link
-    token = token[0]
-    target = token
-    return target
-
+        target = None
+    return (target, space[0])
 
 def process_in():
+    """
+    Read stdin, return list of link, space tuples.
+    """
     data = sys.stdin.read()
 
     links = []
     for p in link.scanString(data):
-        links.append(record_free_link(p))
+        links.append(record_link(p))
 
     for w in wikiword.scanString(data):
-        links.append(record_wiki_link(w))
+        links.append(record_link(w))
 
-    print links
+    for s in space.scanString(data):
+        links.append(record_link(s))
 
+    return links
 
 if __name__ == '__main__':
-    process_in()
+    print process_in()
