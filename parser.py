@@ -1,17 +1,22 @@
 import re
 import sys
-from pyparsing import *
+from pyparsing import Literal, Word, alphanums, Regex, Optional, SkipTo
 
 space = (Literal('@').suppress() + Word(alphanums, alphanums + '-'))('space')
 
-wikiword = Regex(r'[A-Z][a-z]+([A-Z][a-z]+)+', flags=re.UNICODE)('link') + Optional(space)
+wikiword = (Regex(r'[A-Z][a-z]+(?:[A-Z][a-z]*)+')('link')
+        + Optional(space.leaveWhitespace()))
 
 link = (Literal("[[").suppress() + SkipTo(']]')('link')
-        + Literal("]]").suppress()) + Optional(space)
+        + Literal("]]").suppress() + Optional(space.leaveWhitespace()))
+
+# What we care about in the content are links, or wikiwords, or bare
+# spaces.
+content = link ^ wikiword ^ space
 
 def record_link(link):
     """
-    Split a free link into lable and target
+    Process a link token into a target and space tuple.
     """
     token, start, end = link
     link = token.get('link')
@@ -24,23 +29,25 @@ def record_link(link):
         target = None
     return (target, space[0])
 
+
 def process_in():
     """
     Read stdin, return list of link, space tuples.
     """
-    data = sys.stdin.read()
+    return process_data(sys.stdin.read())
 
+
+def process_data(data):
+    """
+    Take the text in data and scan for links.
+    """
     links = []
-    for p in link.scanString(data):
-        links.append(record_link(p))
 
-    for w in wikiword.scanString(data):
-        links.append(record_link(w))
-
-    for s in space.scanString(data):
-        links.append(record_link(s))
+    for c in content.scanString(data):
+        links.append(record_link(c))
 
     return links
+
 
 if __name__ == '__main__':
     print process_in()
