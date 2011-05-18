@@ -11,6 +11,12 @@ import sys
 
 from pyparsing import Literal, Word, alphanums, Regex, Optional, SkipTo, Or
 
+from tiddlyweb.web.util import get_route_value
+from tiddlyweb.model.tiddler import Tiddler
+from tiddlyweb.model.collections import Tiddlers
+from tiddlyweb.store import StoreError
+from tiddlyweb.web.sendtiddlers import send_tiddlers
+
 URL_PATTERN = r"(?:file|http|https|mailto|ftp|irc|news|data):[^\s'\"]+(?:/|\b)"
 
 SPACE = (Literal('@').suppress() + Word(alphanums, alphanums + '-'))('space')
@@ -26,6 +32,73 @@ HTTP = Regex(URL_PATTERN)('link')
 # What we care about in the content are links, or wikiwords, or bare
 # space names.
 CONTENT = Or([LINK, WIKIWORD, HTTP, SPACE])
+
+
+def init(config):
+    if 'selector' in config:
+        base = '/bags/{bag_name:segment}/tiddlers/{tiddler_name:segment}'
+        config['selector'].add(base + '/backlinks[.{format}]',
+                GET=get_backlinks)
+        config['selector'].add(base + '/frontlinks[.{format}]',
+                GET=get_frontlinks)
+
+
+def get_backlinks(environ, start_response):
+    """
+    Return backlinks as a list of tiddlers.
+    """
+    return _get_links(environ, start_response, 'backlinks')
+
+
+def get_frontlinks(environ, start_response):
+    """
+    Return frontlinks as a list of tiddlers.
+    """
+    return _get_links(environ, start_response, 'frontlinks')
+
+
+def _get_links(environ, start_response, type):
+    bag_name = get_route_value(environ, 'bag_name')
+    tiddler_title = get_route_value(environ, 'tiddler_name')
+    store = environ['tiddlyweb.store']
+    filters = environ['tiddlyweb.filters']
+    title = '%s for %s' % (type, tiddler_title)
+
+    tiddler = Tiddler(tiddler_title, bag_name)
+    try:
+        tiddler = store.get(tiddler)
+    except StoreError, exc:
+        raise HTTP404('No such tiddler: %s:%s, %s' % (tiddler.bag,
+            tiddler.title, exc))
+
+    links_manager = LinksManager(environ)
+
+    try:
+        links = getattr(links_manager, 'read_%s' % type)(tiddler)
+    except AttributeError, exc:
+        raise HTTP400('invalid links type: %s' % exc)
+
+    if filters:
+        tiddlers = Tiddlers(title=title)
+    else:
+        tiddlers = Tiddlers(title=title, store=store)
+
+    for link in links:
+        if _is_link(link):
+            tiddler = Tiddler(link, 'temp')
+            tiddler.text = link
+            tiddler.store = store
+        else:
+            bag, title = link.split(':', 1)
+            tiddler = Tiddler(title, bag)
+        try:
+            tiddlers.add(tiddler)
+        except StoreError:
+            # Fake the existence of the tiddler
+            tiddler.store = store
+            tiddlers.add(tiddler)
+
+    return send_tiddlers(environ, start_response, tiddlers=tiddlers)
 
 
 def record_link(link):
