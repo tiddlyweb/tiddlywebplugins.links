@@ -6,10 +6,7 @@ but used as a backlinks database.
 
 import anydbm
 import os
-import re
 import sys
-
-from pyparsing import Literal, Word, alphanums, Regex, Optional, SkipTo, Or
 
 from tiddlyweb.web.util import get_route_value
 from tiddlyweb.model.tiddler import Tiddler
@@ -17,18 +14,7 @@ from tiddlyweb.model.collections import Tiddlers
 from tiddlyweb.store import StoreError, HOOKS
 from tiddlyweb.web.sendtiddlers import send_tiddlers
 
-### Establish Parser Rules
-URL_PATTERN = r"(?:file|http|https|mailto|ftp|irc|news|data):[^\s'\"]+(?:/|\b)"
-SPACE = (Literal('@').suppress() + Word(alphanums, alphanums + '-'))('space')
-WIKIWORD = (Regex(r'[A-Z][a-z]+(?:[A-Z][a-z]*)+')('link')
-        + Optional(SPACE.leaveWhitespace()))
-LINK = (Literal("[[").suppress() + SkipTo(']]')('link')
-        + Literal("]]").suppress() + Optional(SPACE.leaveWhitespace()))
-HTTP = Regex(URL_PATTERN)('link')
-# What we care about in the content are links, or wikiwords, or bare
-# space names.
-CONTENT = Or([LINK, WIKIWORD, HTTP, SPACE])
-
+from tiddlywebplugins.links.parser import process_tiddler, is_link
 
 
 def init(config):
@@ -103,7 +89,7 @@ def _get_links(environ, start_response, type):
         tiddlers = Tiddlers(title=title, store=store)
 
     for link in links:
-        if _is_link(link):
+        if is_link(link):
             tiddler = Tiddler(link, 'temp')
             tiddler.text = link
             tiddler.fields['_canonical_uri'] = link
@@ -119,48 +105,6 @@ def _get_links(environ, start_response, type):
         tiddlers.add(tiddler)
 
     return send_tiddlers(environ, start_response, tiddlers=tiddlers)
-
-
-def record_link(link):
-    """
-    Process a link token into a target and space tuple.
-    """
-    token, _, _ = link
-    link = token.get('link')
-    space = token.get('space', [None])
-    if link and '|' in link:
-        _, target = link.split('|', 1)
-    elif link:
-        target = link
-    else:
-        target = None
-    return (target, space[0])
-
-
-def process_in():
-    """
-    Read stdin, return list of link, space tuples.
-    """
-    return process_data(sys.stdin.read())
-
-
-def process_tiddler(tiddler):
-    """
-    Send tiddler text to be processed.
-    """
-    return process_data(tiddler.text)
-
-
-def process_data(data):
-    """
-    Take the text in data and scan for links.
-    """
-    links = []
-
-    for token in CONTENT.scanString(data):
-        links.append(record_link(token))
-
-    return links
 
 
 class LinksManager(object):
@@ -221,7 +165,7 @@ class LinksManager(object):
         target_value = '%s:%s' % (tiddler.bag, tiddler.title)
 
         for target, space in links:
-            if _is_link(target):
+            if is_link(target):
                 continue
             if space:
                 key = '%s_public:%s' % (space, target)
@@ -252,7 +196,7 @@ class LinksManager(object):
         for target, space in links:
             if space:
                 target_value = '%s_public:%s' % (space, target)
-            elif _is_link(target):
+            elif is_link(target):
                 target_value = target
             else:
                 target_value = '%s:%s' % (tiddler.bag, target)
@@ -270,14 +214,3 @@ class LinksManager(object):
             path = os.path.join(self.environ.get('tiddlyweb.config', {})
                     .get('root_dir', ''), path)
         return anydbm.open(path, 'c')
-
-
-def _is_link(target):
-    """
-    True if target is a URL.
-    """
-    return re.match(URL_PATTERN, target)
-
-
-if __name__ == '__main__':
-    print process_in()

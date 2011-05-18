@@ -1,6 +1,6 @@
 
 
-from tiddlywebplugins.links import process_data
+from tiddlywebplugins.links.parser import process_data
 
 
 def test_wikilink():
