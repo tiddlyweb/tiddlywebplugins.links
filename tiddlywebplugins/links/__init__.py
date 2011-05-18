@@ -14,24 +14,21 @@ from pyparsing import Literal, Word, alphanums, Regex, Optional, SkipTo, Or
 from tiddlyweb.web.util import get_route_value
 from tiddlyweb.model.tiddler import Tiddler
 from tiddlyweb.model.collections import Tiddlers
-from tiddlyweb.store import StoreError
+from tiddlyweb.store import StoreError, HOOKS
 from tiddlyweb.web.sendtiddlers import send_tiddlers
 
+### Establish Parser Rules
 URL_PATTERN = r"(?:file|http|https|mailto|ftp|irc|news|data):[^\s'\"]+(?:/|\b)"
-
 SPACE = (Literal('@').suppress() + Word(alphanums, alphanums + '-'))('space')
-
 WIKIWORD = (Regex(r'[A-Z][a-z]+(?:[A-Z][a-z]*)+')('link')
         + Optional(SPACE.leaveWhitespace()))
-
 LINK = (Literal("[[").suppress() + SkipTo(']]')('link')
         + Literal("]]").suppress() + Optional(SPACE.leaveWhitespace()))
-
 HTTP = Regex(URL_PATTERN)('link')
-
 # What we care about in the content are links, or wikiwords, or bare
 # space names.
 CONTENT = Or([LINK, WIKIWORD, HTTP, SPACE])
+
 
 
 def init(config):
@@ -41,6 +38,22 @@ def init(config):
                 GET=get_backlinks)
         config['selector'].add(base + '/frontlinks[.{format}]',
                 GET=get_frontlinks)
+
+
+def tiddler_change_hook(store, tiddler):
+    """
+    Update the links database with data from this tiddler.
+
+    TODO: work with other renderable types, not just tiddlywiki text.
+    """
+    if not tiddler.type or tiddler.type == 'None':
+        links_manager = LinksManager(store.environ)
+        links_manager.update_database(tiddler)
+
+
+# Establish hooks
+HOOKS['tiddler']['put'].append(tiddler_change_hook)
+HOOKS['tiddler']['delete'].append(tiddler_change_hook)
 
 
 def get_backlinks(environ, start_response):
@@ -58,6 +71,12 @@ def get_frontlinks(environ, start_response):
 
 
 def _get_links(environ, start_response, type):
+    """
+    Form the links as tiddlers and then send them 
+    to send_tiddlers. This allows us to use the 
+    serialization and filtering subsystems on the
+    lists of links.
+    """
     bag_name = get_route_value(environ, 'bag_name')
     tiddler_title = get_route_value(environ, 'tiddler_name')
     store = environ['tiddlyweb.store']
@@ -92,12 +111,12 @@ def _get_links(environ, start_response, type):
         else:
             bag, title = link.split(':', 1)
             tiddler = Tiddler(title, bag)
-        try:
-            tiddlers.add(tiddler)
-        except StoreError:
-            # Fake the existence of the tiddler
-            tiddler.store = store
-            tiddlers.add(tiddler)
+            try:
+                tiddler = store.get(tiddler)
+            except StoreError:
+                # fake the existence of the tiddler
+                tiddler.store = store
+        tiddlers.add(tiddler)
 
     return send_tiddlers(environ, start_response, tiddlers=tiddlers)
 

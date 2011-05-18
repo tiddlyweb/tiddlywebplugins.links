@@ -57,26 +57,24 @@ def test_store_tiddler():
     links_manager.update_database(tiddler)
 
     frontlinks = links_manager.read_frontlinks(tiddler)
-    print frontlinks
 
     assert 'barney:you' in frontlinks
     assert 'barney:NotYou' in frontlinks
 
     tiddler = Tiddler('you', 'barney')
     backlinks = links_manager.read_backlinks(tiddler)
-    print backlinks
 
     assert 'barney:hello' in backlinks
 
 def test_stored_with_space():
+    store.put(Bag('barney'))
     tiddler = Tiddler('hello', 'barney')
     tiddler.text = "I am NotYou@cdent, http://burningchrome.com/"
 
-    links_manager.update_database(tiddler)
+    store.put(tiddler)
 
     frontlinks = links_manager.read_frontlinks(tiddler)
     assert len(frontlinks) == 2, frontlinks
-    print frontlinks
 
     tiddler = Tiddler('NotYou', 'cdent_public')
     backlinks = links_manager.read_backlinks(tiddler)
@@ -90,12 +88,10 @@ def test_web_front():
     tiddler.text = "I am NotYou@cdent, http://burningchrome.com/"
     store.put(tiddler)
 
-    links_manager.update_database(tiddler)
-
     http = httplib2.Http()
     response, content = http.request('http://0.0.0.0:8080/bags/bagone/tiddlers/tiddlerone/frontlinks')
-    print 'TODO'
-    print content
+    assert '<a href="/bags/cdent_public/tiddlers/NotYou">NotYou</a>' in content
+    assert '<a href="http://burningchrome.com/">http://burningchrome.com/</a>' in content
 
     bag = Bag('cdent_public')
     store.put(bag)
@@ -103,11 +99,16 @@ def test_web_front():
     tiddler.text = 'as BigPoo is'
     store.put(tiddler)
 
-    links_manager.update_database(tiddler)
-
     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/frontlinks')
-    print 'NotYou frontlinks'
-    print content
+    assert '<a href="/bags/cdent_public/tiddlers/BigPoo">BigPoo</a>' in content
+
     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks')
-    print 'NotYou backlinks'
-    print content
+
+    assert '<a href="/bags/barney/tiddlers/hello">hello</a>' in content
+    assert '<a href="/bags/bagone/tiddlers/tiddlerone">tiddlerone</a>' in content
+
+# TODO
+#     store.delete(Tiddler('hello', 'barney'))
+#     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks')
+# 
+#     assert '<a href="/bags/barney/tiddlers/hello">hello</a>' not in content
