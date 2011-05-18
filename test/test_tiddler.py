@@ -21,14 +21,9 @@ def setup_module(module):
     # cascade to deal with differently named files depending on 
     # anydbm impelementation
     try:
-        os.unlink('frontlinks.db')
-        os.unlink('backlinks.db')
+        os.unlink('links.db')
     except OSError:
-        try:
-            os.unlink('frontlinks')
-            os.unlink('backlinks')
-        except OSError:
-            pass  # not there
+        pass  # not there
     module.links_manager = LinksManager()
 
     try:
@@ -109,7 +104,7 @@ def test_web_front():
     assert '<a href="/bags/bagone/tiddlers/tiddlerone">tiddlerone</a>' in content
 
 # TODO
-#     store.delete(Tiddler('hello', 'barney'))
-#     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks')
-# 
-#     assert '<a href="/bags/barney/tiddlers/hello">hello</a>' not in content
+    store.delete(Tiddler('hello', 'barney'))
+    response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks')
+ 
+    assert '<a href="/bags/barney/tiddlers/hello">hello</a>' not in content

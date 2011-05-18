@@ -1,18 +1,53 @@
 """
 Module to contain the LinksManager class.
 """
-import anydbm
-import os
- 
+
+from sqlalchemy.engine import create_engine
+from sqlalchemy.orm import mapper, sessionmaker, scoped_session
+from sqlalchemy.schema import (Table, Column, PrimaryKeyConstraint,
+        MetaData)
+from sqlalchemy.types import Unicode
+
 from tiddlywebplugins.links.parser import process_tiddler, is_link
+
+DB_DEFAULT = 'sqlite:///links.db'
+
+METADATA = MetaData()
+SESSION = scoped_session(sessionmaker())
+
+LINK_TABLE = Table('link', METADATA,
+        Column('source', Unicode(256), nullable=False, index=True),
+        Column('target', Unicode(256), nullable=False, index=True),
+        PrimaryKeyConstraint('source', 'target'))
+
+
+class SLink(object):
+    """
+    Holder object for mapping the Link. Kind of redundant
+    but nice for the __repr__.
+    """
+
+    def __init__(self, source, target):
+        object.__init__(self)
+        self.source = source
+        self.target = target
+
+    def __repr__(self):
+        return '<SLink(%s->%s)>' % (self.source, self.target)
+
+mapper(SLink, LINK_TABLE)
+
 
 class LinksManager(object):
     """
-    A container class for the functionality for managing a 
+    A container class for the functionality for managing a
     front and backlinks database. The primary purpose is to
     encapsulate an 'environ' and provide the forward opportunity
     to subclass for different types of storage.
     """
+
+    mapped = False
+    engine = False
 
     def __init__(self, environ=None):
         """
@@ -22,94 +57,83 @@ class LinksManager(object):
             environ = {}
         self.environ = environ
 
+        if not LinksManager.engine:
+            engine = create_engine(self._db_config())
+            METADATA.bind = engine
+            SESSION.configure(bind=engine)
+            LinksManager.engine = engine
+
+        self.session = SESSION()
+
+        if not LinksManager.mapped:
+            METADATA.create_all(engine)
+            LinksManager.mapped = True
+
+    def _db_config(self):
+        """
+        Extract the database configuration from config or use
+        the default.
+        """
+        return self.environ.get('tiddlyweb.config', {}).get(
+                'linkdb_config', DB_DEFAULT)
+
     def update_database(self, tiddler):
         """
         Update the front and back links databases with the provided
         tiddler.
         """
         links = process_tiddler(tiddler)
-        self._update_frontlinks(links, tiddler)
-        self._update_backlinks(links, tiddler)
+        self._update_links(links, tiddler)
 
     def read_frontlinks(self, tiddler):
         """
         Return a list of forward links from this tiddler.
         """
-        return self._read_links('frontlinks', tiddler)
+        source = '%s:%s' % (tiddler.bag, tiddler.title)
+        try:
+            links = self.session.query(SLink.target).filter(
+                    SLink.source == source).all()
+            self.session.close()
+        except:
+            self.session.rollback()
+            raise
+        return [link[0] for link in links]
 
     def read_backlinks(self, tiddler):
         """
         Return a list of links to this tiddler.
         """
-        return self._read_links('backlinks', tiddler)
-
-    def _read_links(self, linktype, tiddler):
-        """
-        Read a database to get the value at a key generated from
-        the provided tiddler.
-        """
-        database = self._open_database(linktype)
-        tiddler_key = '%s:%s' % (tiddler.bag, tiddler.title)
-        tiddler_key = tiddler_key.encode('utf-8')
+        target = '%s:%s' % (tiddler.bag, tiddler.title)
         try:
-            return database[tiddler_key].split('\0')
-        except KeyError:
-            return []
+            links = self.session.query(SLink.source).filter(
+                    SLink.target == target).all()
+            self.session.close()
+        except:
+            self.session.rollback()
+            raise
+        return [link[0] for link in links]
 
-    def _update_backlinks(self, links, tiddler):
+    def _update_links(self, links, tiddler):
         """
-        Update the backlinks database.
+        Update the links database.
         """
-        database = self._open_database('backlinks')
-        target_value = '%s:%s' % (tiddler.bag, tiddler.title)
+        source = '%s:%s' % (tiddler.bag, tiddler.title)
 
-        for target, space in links:
-            if is_link(target):
-                continue
-            if space:
-                key = '%s_public:%s' % (space, target)
-            else:
-                key = '%s:%s' % (tiddler.bag, target)
-            key = key.encode('utf-8')
-            try:
-                back_targets = database[key].decode('UTF-8').split('\0')
-            except KeyError:
-                back_targets = []
-            if key not in back_targets:
-                back_targets.append(target_value)
-                database[key] = '\0'.join(back_targets).encode('UTF-8')
-
-    def _update_frontlinks(self, links, tiddler):
-        """
-        Update the frontlinks database.
-        """
-        database = self._open_database('frontlinks')
-        key = '%s:%s' % (tiddler.bag, tiddler.title)
-        key = key.encode('utf-8')
-        # Remove existing data
         try:
-            del database[key]
-        except KeyError:
-            pass
-        front_targets = []
-        for target, space in links:
-            if space:
-                target_value = '%s_public:%s' % (space, target)
-            elif is_link(target):
-                target_value = target
-            else:
-                target_value = '%s:%s' % (tiddler.bag, target)
-            front_targets.append(target_value)
-        targets = '\0'.join(front_targets).encode('UTF-8')
-        database[key] = targets
+            old_links = self.session.query(SLink).filter(
+                    SLink.source == source)
+            old_links.delete()
 
-    def _open_database(self, path):
-        """
-        Open an anydbm database file. If the path is not
-        absolute and root_dir is set in config, make the 
-        path absolute.
-        """
-        if not os.path.isabs(path):
-            path = os.path.join(self.environ.get('tiddlyweb.config', {})
-                    .get('root_dir', ''), path)
-        return anydbm.open(path, 'c')
+            for link, space in links:
+                if is_link(link):
+                    target = link
+                elif space:
+                    target = '%s_public:%s' % (space, link)
+                else:
+                    target = '%s:%s' % (tiddler.bag, link)
+                new_link = SLink(source, target)
+                self.session.merge(new_link)
+            self.session.commit()
+        except:
+            self.session.rollback()
+            raise
