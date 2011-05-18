@@ -4,9 +4,8 @@ between tiddlers. Managed as a forward links database
 but used as a backlinks database.
 """
 
-import sys
-
 from tiddlyweb.web.util import get_route_value
+from tiddlyweb.web.http import HTTP404, HTTP400
 from tiddlyweb.model.tiddler import Tiddler
 from tiddlyweb.model.collections import Tiddlers
 from tiddlyweb.store import StoreError, HOOKS
@@ -17,6 +16,9 @@ from tiddlywebplugins.links.parser import is_link
 
 
 def init(config):
+    """
+    Add the back and front links handlers.
+    """
     if 'selector' in config:
         base = '/bags/{bag_name:segment}/tiddlers/{tiddler_name:segment}'
         config['selector'].add(base + '/backlinks[.{format}]',
@@ -55,7 +57,7 @@ def get_frontlinks(environ, start_response):
     return _get_links(environ, start_response, 'frontlinks')
 
 
-def _get_links(environ, start_response, type):
+def _get_links(environ, start_response, linktype):
     """
     Form the links as tiddlers and then send them 
     to send_tiddlers. This allows us to use the 
@@ -66,7 +68,7 @@ def _get_links(environ, start_response, type):
     tiddler_title = get_route_value(environ, 'tiddler_name')
     store = environ['tiddlyweb.store']
     filters = environ['tiddlyweb.filters']
-    title = '%s for %s' % (type, tiddler_title)
+    title = '%s for %s' % (linktype, tiddler_title)
 
     tiddler = Tiddler(tiddler_title, bag_name)
     try:
@@ -78,7 +80,7 @@ def _get_links(environ, start_response, type):
     links_manager = LinksManager(environ)
 
     try:
-        links = getattr(links_manager, 'read_%s' % type)(tiddler)
+        links = getattr(links_manager, 'read_%s' % linktype)(tiddler)
     except AttributeError, exc:
         raise HTTP400('invalid links type: %s' % exc)
 

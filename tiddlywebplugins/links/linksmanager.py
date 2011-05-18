@@ -1,3 +1,6 @@
+"""
+Module to contain the LinksManager class.
+"""
 import anydbm
 import os
  
@@ -40,12 +43,12 @@ class LinksManager(object):
         """
         return self._read_links('backlinks', tiddler)
 
-    def _read_links(self, type, tiddler):
+    def _read_links(self, linktype, tiddler):
         """
         Read a database to get the value at a key generated from
         the provided tiddler.
         """
-        database = self._open_database(type)
+        database = self._open_database(linktype)
         tiddler_key = '%s:%s' % (tiddler.bag, tiddler.title)
         tiddler_key = tiddler_key.encode('utf-8')
         try:
