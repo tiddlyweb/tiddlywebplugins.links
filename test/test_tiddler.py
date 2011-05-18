@@ -1,5 +1,6 @@
 
-from tiddlywebplugins.links import process_tiddler, LinksManager, init
+from tiddlywebplugins.links.parser import process_tiddler
+from tiddlywebplugins.links.linksmanager import LinksManager
 
 from tiddlyweb.model.bag import Bag
 from tiddlyweb.model.tiddler import Tiddler
