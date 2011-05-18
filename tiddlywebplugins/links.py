@@ -87,6 +87,7 @@ def _get_links(environ, start_response, type):
         if _is_link(link):
             tiddler = Tiddler(link, 'temp')
             tiddler.text = link
+            tiddler.fields['_canonical_uri'] = link
             tiddler.store = store
         else:
             bag, title = link.split(':', 1)

@@ -22,7 +22,7 @@ setup(
     platforms = 'Posix; MacOS X; Windows',
     packages = find_packages(exclude=['test']),
     install_requires = ['setuptools',
-        'tiddlyweb',
+        'tiddlyweb>=1.2.34',
         'pyparsing'],
     zip_safe = False
     )
