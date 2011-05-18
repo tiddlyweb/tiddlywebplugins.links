@@ -187,6 +187,7 @@ class LinksManager(object):
         """
         database = self._open_database(type)
         tiddler_key = '%s:%s' % (tiddler.bag, tiddler.title)
+        tiddler_key = tiddler_key.encode('utf-8')
         try:
             return database[tiddler_key].split('\0')
         except KeyError:
@@ -220,6 +221,7 @@ class LinksManager(object):
         """
         database = self._open_database('frontlinks')
         key = '%s:%s' % (tiddler.bag, tiddler.title)
+        key = key.encode('utf-8')
         # Remove existing data
         try:
             del database[key]

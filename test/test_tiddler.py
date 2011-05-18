@@ -89,5 +89,19 @@ def test_web_front():
     http = httplib2.Http()
     response, content = http.request('http://0.0.0.0:8080/bags/bagone/tiddlers/tiddlerone/frontlinks')
     print 'TODO'
-    print response
+    print content
+
+    bag = Bag('cdent_public')
+    store.put(bag)
+    tiddler = Tiddler('NotYou', 'cdent_public')
+    tiddler.text = 'as BigPoo is'
+    store.put(tiddler)
+
+    links_manager.update_database(tiddler)
+
+    response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/frontlinks')
+    print 'NotYou frontlinks'
+    print content
+    response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks')
+    print 'NotYou backlinks'
     print content
