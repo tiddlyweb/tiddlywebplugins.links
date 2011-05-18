@@ -207,6 +207,7 @@ class LinksManager(object):
                 key = '%s_public:%s' % (space, target)
             else:
                 key = '%s:%s' % (tiddler.bag, target)
+            key = key.encode('utf-8')
             try:
                 back_targets = database[key].decode('UTF-8').split('\0')
             except KeyError:
