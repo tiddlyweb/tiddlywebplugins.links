@@ -17,11 +17,17 @@ def setup_module(module):
 
     module.store = get_store(config)
 
+    # cascade to deal with differently named files depending on 
+    # anydbm impelementation
     try:
         os.unlink('frontlinks.db')
         os.unlink('backlinks.db')
     except OSError:
-        pass  # not there
+        try:
+            os.unlink('frontlinks')
+            os.unlink('backlinks')
+        except OSError:
+            pass  # not there
     module.links_manager = LinksManager()
 
     try:
