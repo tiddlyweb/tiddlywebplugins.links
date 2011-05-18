@@ -15,9 +15,11 @@ WIKIWORD = (Regex(r'[A-Z][a-z]+(?:[A-Z][a-z]*)+')('link')
 LINK = (Literal("[[").suppress() + SkipTo(']]')('link')
         + Literal("]]").suppress() + Optional(SPACE.leaveWhitespace()))
 
+HTTP = Regex(r"(?:file|http|https|mailto|ftp|irc|news|data):[^\s'\"]+(?:/|\b)")('link')
+
 # What we care about in the content are links, or wikiwords, or bare
-# spaces.
-CONTENT = LINK ^ WIKIWORD ^ SPACE
+# space names.
+CONTENT = LINK ^ WIKIWORD ^ HTTP ^ SPACE
 
 
 def record_link(link):

@@ -23,6 +23,26 @@ def test_freelink_href():
 
     assert links[0] == ('http://cdent-mt.tiddlyspace.com/Collaboration%20Requires%20Goals', None)
 
+def test_plain_href():
+    links = process_data('I link to http://burningchrome.com/ all the time')
+
+    assert links[0] == ('http://burningchrome.com/', None)
+
+def test_punct_href():
+    links = process_data('I link to http://burningchrome.com/too, all the time')
+
+    assert links[0] == ('http://burningchrome.com/too', None)
+
+def test_anchor_href():
+    links = process_data('I link to http://burningchrome.com/too#this, all the time')
+
+    assert links[0] == ('http://burningchrome.com/too#this', None)
+
+def test_query_href():
+    links = process_data('I link to http://burningchrome.com/too?q=pie, all the time')
+
+    assert links[0] == ('http://burningchrome.com/too?q=pie', None)
+
 def test_spacelink():
     links = process_data('Stop by, say hi to @cdent, yes?')
 
