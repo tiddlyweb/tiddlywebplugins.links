@@ -50,6 +50,7 @@ def test_store_tiddler():
     tiddler = Tiddler('hello', 'barney')
     tiddler.text = 'I am NotYou, you [[are|you]]!'
 
+    links_manager.delete_links(tiddler)
     links_manager.update_database(tiddler)
 
     frontlinks = links_manager.read_frontlinks(tiddler)
@@ -103,7 +104,6 @@ def test_web_front():
     assert '<a href="/bags/barney/tiddlers/hello">hello</a>' in content
     assert '<a href="/bags/bagone/tiddlers/tiddlerone">tiddlerone</a>' in content
 
-# TODO
     store.delete(Tiddler('hello', 'barney'))
     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks')
  

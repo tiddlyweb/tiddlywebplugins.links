@@ -89,7 +89,8 @@ class LinksManager(object):
         """
         Return a list of forward links from this tiddler.
         """
-        source = '%s:%s' % (tiddler.bag, tiddler.title)
+        source = _tiddler_key(tiddler)
+
         try:
             links = self.session.query(SLink.target).filter(
                     SLink.source == source).all()
@@ -103,7 +104,8 @@ class LinksManager(object):
         """
         Return a list of links to this tiddler.
         """
-        target = '%s:%s' % (tiddler.bag, tiddler.title)
+        target = _tiddler_key(tiddler)
+
         try:
             links = self.session.query(SLink.source).filter(
                     SLink.target == target).all()
@@ -113,17 +115,27 @@ class LinksManager(object):
             raise
         return [link[0] for link in links]
 
-    def _update_links(self, links, tiddler):
+    def delete_links(self, tiddler):
         """
-        Update the links database.
+        Clean out the links for this tiddler.
         """
-        source = '%s:%s' % (tiddler.bag, tiddler.title)
+        source = _tiddler_key(tiddler)
 
         try:
             old_links = self.session.query(SLink).filter(
                     SLink.source == source)
             old_links.delete()
+        except:
+            self.session.rollback()
+            raise
 
+    def _update_links(self, links, tiddler):
+        """
+        Update the links database.
+        """
+        source = _tiddler_key(tiddler)
+
+        try:
             for link, space in links:
                 if is_link(link):
                     target = link
@@ -137,3 +149,10 @@ class LinksManager(object):
         except:
             self.session.rollback()
             raise
+
+
+def _tiddler_key(tiddler):
+    """
+    Generate a source or target key from a tiddler object.
+    """
+    return '%s:%s' % (tiddler.bag, tiddler.title)

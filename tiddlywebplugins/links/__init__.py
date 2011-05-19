@@ -33,8 +33,9 @@ def tiddler_change_hook(store, tiddler):
 
     TODO: work with other renderable types, not just tiddlywiki text.
     """
+    links_manager = LinksManager(store.environ)
+    links_manager.delete_links(tiddler)
     if not tiddler.type or tiddler.type == 'None':
-        links_manager = LinksManager(store.environ)
         links_manager.update_database(tiddler)
 
 
