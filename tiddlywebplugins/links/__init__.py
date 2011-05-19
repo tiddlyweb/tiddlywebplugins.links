@@ -4,12 +4,17 @@ between tiddlers. Managed as a forward links database
 but used as a backlinks database.
 """
 
+import logging
+
+from tiddlyweb.manage import make_command
 from tiddlyweb.web.util import get_route_value
 from tiddlyweb.web.http import HTTP404, HTTP400
 from tiddlyweb.model.tiddler import Tiddler
 from tiddlyweb.model.collections import Tiddlers
 from tiddlyweb.store import StoreError, HOOKS
 from tiddlyweb.web.sendtiddlers import send_tiddlers
+
+from tiddlywebplugins.utils import get_store
 
 from tiddlywebplugins.links.linksmanager import LinksManager
 from tiddlywebplugins.links.parser import is_link
@@ -25,6 +30,19 @@ def init(config):
                 GET=get_backlinks)
         config['selector'].add(base + '/frontlinks[.{format}]',
                 GET=get_frontlinks)
+
+    @make_command()
+    def refreshlinksdb(args):
+        """Refresh the back and front links database."""
+        store = get_store(config)
+
+        links_manager = LinksManager(store.environ)
+        for bag in store.list_bags():
+            logging.debug('updating links for tiddlers in bag: %s', bag.name)
+            for tiddler in store.list_bag_tiddlers(bag):
+                links_manager.delete_links(tiddler)
+                if not tiddler.type or tiddler.type == 'None':
+                    links_manager.update_database(tiddler)
 
 
 def tiddler_change_hook(store, tiddler):

@@ -1,4 +1,6 @@
 import mangler
 config = {
-        'system_plugins': ['tiddlywebplugins.links']
+        'log_level': 'DEBUG',
+        'system_plugins': ['tiddlywebplugins.links'],
+        'twanager_plugins': ['tiddlywebplugins.links']
         }
