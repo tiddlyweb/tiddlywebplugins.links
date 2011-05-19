@@ -46,6 +46,17 @@ def test_simple_tiddler():
     assert links[0] == ('NotYou', None)
     assert links[1] == ('you', None)
 
+def test_space_only():
+    tiddler = Tiddler('cow', 'barn')
+    tiddler.text = '@cdent'
+
+    links_manager.delete_links(tiddler)
+    links_manager.update_database(tiddler)
+
+    frontlinks = links_manager.read_frontlinks(tiddler)
+
+    assert 'cdent_public:' in frontlinks
+
 def test_store_tiddler():
     tiddler = Tiddler('hello', 'barney')
     tiddler.text = 'I am NotYou, you [[are|you]]!'

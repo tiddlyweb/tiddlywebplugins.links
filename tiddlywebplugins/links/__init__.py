@@ -117,12 +117,15 @@ def _get_links(environ, start_response, linktype):
             tiddler.store = store
         else:
             bag, title = link.split(':', 1)
-            tiddler = Tiddler(title, bag)
-            try:
-                tiddler = store.get(tiddler)
-            except StoreError:
-                # fake the existence of the tiddler
-                tiddler.store = store
+            if title:
+                tiddler = Tiddler(title, bag)
+                try:
+                    tiddler = store.get(tiddler)
+                except StoreError:
+                    # fake the existence of the tiddler
+                    tiddler.store = store
+            else:
+                continue #  skip space targets (for now)
         tiddlers.add(tiddler)
 
     return send_tiddlers(environ, start_response, tiddlers=tiddlers)

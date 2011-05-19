@@ -137,6 +137,8 @@ class LinksManager(object):
 
         try:
             for link, space in links:
+                if link is None:
+                    link = ''
                 if is_link(link):
                     target = link
                 elif space:
