@@ -40,6 +40,7 @@ def init(config):
         for bag in store.list_bags():
             logging.debug('updating links for tiddlers in bag: %s', bag.name)
             for tiddler in store.list_bag_tiddlers(bag):
+                tiddler = store.get(tiddler) #  we must get text
                 links_manager.delete_links(tiddler)
                 if not tiddler.type or tiddler.type == 'None':
                     links_manager.update_database(tiddler)
