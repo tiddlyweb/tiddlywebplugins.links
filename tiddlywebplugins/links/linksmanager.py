@@ -4,9 +4,8 @@ Module to contain the LinksManager class.
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import mapper, sessionmaker, scoped_session
-from sqlalchemy.schema import (Table, Column, PrimaryKeyConstraint,
-        MetaData)
-from sqlalchemy.types import Unicode
+from sqlalchemy.schema import Table, Column, MetaData
+from sqlalchemy.types import Unicode, Integer
 
 from tiddlywebplugins.links.parser import process_tiddler, is_link
 
@@ -16,10 +15,10 @@ METADATA = MetaData()
 SESSION = scoped_session(sessionmaker())
 
 LINK_TABLE = Table('link', METADATA,
-        Column('source', Unicode(100), nullable=False,
-            index=True, primary_key=True),
-        Column('target', Unicode(233), nullable=False,
-            index=True, primary_key=True),
+        Column('id', Integer, nullable=False, primary_key=True,
+            autoincrement=True),
+        Column('source', Unicode(333), nullable=False, index=True),
+        Column('target', Unicode(333), nullable=False, index=True),
         mysql_charset='utf8')
 
 
@@ -29,10 +28,11 @@ class SLink(object):
     but nice for the __repr__.
     """
 
-    def __init__(self, source, target):
+    def __init__(self, source, target, id=None):
         object.__init__(self)
         self.source = source
         self.target = target
+        self.id = None
 
     def __repr__(self):
         return '<SLink(%s->%s)>' % (self.source, self.target)
@@ -111,7 +111,7 @@ class LinksManager(object):
 
         try:
             links = self.session.query(SLink.target).filter(
-                    SLink.source == source).all()
+                    SLink.source == source).group_by(SLink.target).all()
             self.session.close()
         except:
             self.session.rollback()
@@ -126,7 +126,7 @@ class LinksManager(object):
 
         try:
             links = self.session.query(SLink.source).filter(
-                    SLink.target == target).all()
+                    SLink.target == target).group_by(SLink.source).all()
             self.session.close()
         except:
             self.session.rollback()
@@ -164,8 +164,8 @@ class LinksManager(object):
                 else:
                     target = '%s:%s' % (tiddler.bag, link)
                 new_link = SLink(source, target)
-                self.session.merge(new_link)
-            self.session.commit()
+                self.session.add(new_link)
+                self.session.commit()
         except:
             self.session.rollback()
             raise

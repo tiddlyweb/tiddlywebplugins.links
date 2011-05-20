@@ -23,6 +23,7 @@ setup(
     packages = find_packages(exclude=['test']),
     install_requires = ['setuptools',
         'tiddlyweb>=1.2.34',
+        'sqlalchemy',
         'pyparsing'],
     zip_safe = False
     )

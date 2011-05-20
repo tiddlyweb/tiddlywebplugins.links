@@ -6,9 +6,11 @@ but used as a backlinks database.
 
 import logging
 
+from tiddlyweb.control import determine_bag_from_recipe
 from tiddlyweb.manage import make_command
 from tiddlyweb.web.util import get_route_value
 from tiddlyweb.web.http import HTTP404, HTTP400
+from tiddlyweb.model.recipe import Recipe
 from tiddlyweb.model.tiddler import Tiddler
 from tiddlyweb.model.collections import Tiddlers
 from tiddlyweb.store import StoreError, HOOKS
@@ -116,16 +118,21 @@ def _get_links(environ, start_response, linktype):
             tiddler.fields['_canonical_uri'] = link
             tiddler.store = store
         else:
-            bag, title = link.split(':', 1)
-            if title:
-                tiddler = Tiddler(title, bag)
+            container, title = link.split(':', 1)
+            if title:  # skip space links for now
+                try:
+                    recipe = Recipe(container)
+                    recipe = store.get(recipe)
+                    bag = determine_bag_from_recipe(recipe, tiddler, environ)
+                    bag_name = bag.name
+                except StoreError:
+                    bag_name = container
+                tiddler = Tiddler(title, bag_name)
                 try:
                     tiddler = store.get(tiddler)
                 except StoreError:
                     # fake the existence of the tiddler
                     tiddler.store = store
-            else:
-                continue #  skip space targets (for now)
         tiddlers.add(tiddler)
 
     return send_tiddlers(environ, start_response, tiddlers=tiddlers)
