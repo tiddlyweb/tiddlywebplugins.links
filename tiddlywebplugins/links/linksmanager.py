@@ -16,9 +16,11 @@ METADATA = MetaData()
 SESSION = scoped_session(sessionmaker())
 
 LINK_TABLE = Table('link', METADATA,
-        Column('source', Unicode(256), nullable=False, index=True),
-        Column('target', Unicode(256), nullable=False, index=True),
-        PrimaryKeyConstraint('source', 'target'))
+        Column('source', Unicode(100), nullable=False,
+            index=True, primary_key=True),
+        Column('target', Unicode(233), nullable=False,
+            index=True, primary_key=True),
+        mysql_charset='utf8')
 
 
 class SLink(object):
@@ -37,6 +39,9 @@ class SLink(object):
 
 mapper(SLink, LINK_TABLE)
 
+ENGINE = None
+MAPPED = False
+
 
 class LinksManager(object):
     """
@@ -46,28 +51,41 @@ class LinksManager(object):
     to subclass for different types of storage.
     """
 
-    mapped = False
-    engine = False
-
     def __init__(self, environ=None):
         """
         Establish an environ for this instance.
         """
+
+        global ENGINE, MAPPED
+
         if environ is None:
             environ = {}
         self.environ = environ
 
-        if not LinksManager.engine:
-            engine = create_engine(self._db_config())
-            METADATA.bind = engine
-            SESSION.configure(bind=engine)
-            LinksManager.engine = engine
+        if not ENGINE:
+            db_config = self._db_config()
+            if 'mysql' in db_config:
+                try:
+                    from tiddlywebplugins.mysql2 import LookLively
+                    listeners = [LookLively()]
+                except ImportError:
+                    listeners = []
+                ENGINE = create_engine(db_config,
+                        pool_recycle=3600,
+                        pool_size=20,
+                        max_overflow=-1,
+                        pool_timeout=2,
+                        listeners=listeners)
+            else:
+                ENGINE = create_engine(db_config)
+            METADATA.bind = ENGINE
+            SESSION.configure(bind=ENGINE)
 
         self.session = SESSION()
 
-        if not LinksManager.mapped:
-            METADATA.create_all(engine)
-            LinksManager.mapped = True
+        if not MAPPED:
+            METADATA.create_all(ENGINE)
+            MAPPED = True
 
     def _db_config(self):
         """
