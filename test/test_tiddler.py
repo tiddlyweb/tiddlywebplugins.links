@@ -55,7 +55,7 @@ def test_space_only():
 
     frontlinks = links_manager.read_frontlinks(tiddler)
 
-    assert 'cdent_public:' in frontlinks
+    assert '@cdent:' in frontlinks
 
 def test_store_tiddler():
     tiddler = Tiddler('hello', 'barney')
@@ -99,7 +99,7 @@ def test_web_front():
     http = httplib2.Http()
     response, content = http.request('http://0.0.0.0:8080/bags/bagone/tiddlers/tiddlerone/frontlinks')
     assert response['status'] == '200', content
-    assert '<a href="/bags/cdent_public/tiddlers/NotYou">NotYou</a>' in content, content
+    assert '<a href="http://cdent.0.0.0.0:8080/NotYou">NotYou@cdent</a>' in content, content
     assert '<a href="http://burningchrome.com/">http://burningchrome.com/</a>' in content
 
     bag = Bag('cdent_public')
@@ -109,7 +109,7 @@ def test_web_front():
     store.put(tiddler)
 
     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/frontlinks')
-    assert '<a href="/bags/cdent_public/tiddlers/BigPoo">BigPoo</a>' in content
+    assert '<a href="/bags/cdent_public/tiddlers/BigPoo">BigPoo</a>' in content, content
 
     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks')
 
@@ -120,3 +120,11 @@ def test_web_front():
     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks')
  
     assert '<a href="/bags/barney/tiddlers/hello">hello</a>' not in content
+
+    tiddler = Tiddler('monkey', 'barney')
+    tiddler.text = '@cdent'
+    store.put(tiddler)
+
+    response, content = http.request('http://0.0.0.0:8080/bags/barney/tiddlers/monkey/frontlinks')
+
+    assert '<a href="http://cdent.0.0.0.0:8080/">@cdent</a>' in content

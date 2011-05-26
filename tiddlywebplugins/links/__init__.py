@@ -8,7 +8,7 @@ import logging
 
 from tiddlyweb.control import determine_bag_from_recipe
 from tiddlyweb.manage import make_command
-from tiddlyweb.web.util import get_route_value
+from tiddlyweb.web.util import get_route_value, encode_name
 from tiddlyweb.web.http import HTTP404, HTTP400
 from tiddlyweb.model.recipe import Recipe
 from tiddlyweb.model.tiddler import Tiddler
@@ -20,6 +20,9 @@ from tiddlywebplugins.utils import get_store
 
 from tiddlywebplugins.links.linksmanager import LinksManager
 from tiddlywebplugins.links.parser import is_link
+
+from tiddlywebplugins.tiddlyspace.spaces import space_uri
+from tiddlywebplugins.tiddlyspace.space import Space
 
 
 def init(config):
@@ -90,7 +93,7 @@ def _get_links(environ, start_response, linktype):
     tiddler_title = get_route_value(environ, 'tiddler_name')
     store = environ['tiddlyweb.store']
     filters = environ['tiddlyweb.filters']
-    title = '%s for %s' % (linktype, tiddler_title)
+    collection_title = '%s for %s' % (linktype, tiddler_title)
 
     tiddler = Tiddler(tiddler_title, bag_name)
     try:
@@ -107,32 +110,57 @@ def _get_links(environ, start_response, linktype):
         raise HTTP400('invalid links type: %s' % exc)
 
     if filters:
-        tiddlers = Tiddlers(title=title)
+        tiddlers = Tiddlers(title=collection_title)
     else:
-        tiddlers = Tiddlers(title=title, store=store)
+        tiddlers = Tiddlers(title=collection_title, store=store)
 
     for link in links:
         if is_link(link):
-            tiddler = Tiddler(link, 'temp')
-            tiddler.text = link
-            tiddler.fields['_canonical_uri'] = link
-            tiddler.store = store
+            tiddler = _link_tiddler(link, store)
         else:
             container, title = link.split(':', 1)
-            if title:  # skip space links for now
+            if container.startswith('@') and not title:
+                title = container
+                container = container[1:]
+                uri = space_uri(environ, container)
+                tiddler = _link_tiddler(uri, store, title)
+            elif title:
                 try:
-                    recipe = Recipe(container)
-                    recipe = store.get(recipe)
-                    bag = determine_bag_from_recipe(recipe, tiddler, environ)
-                    bag_name = bag.name
-                except StoreError:
-                    bag_name = container
-                tiddler = Tiddler(title, bag_name)
-                try:
-                    tiddler = store.get(tiddler)
-                except StoreError:
-                    # fake the existence of the tiddler
-                    tiddler.store = store
+                    if container == bag_name:
+                        raise ValueError
+                    space = Space.name_from_recipe(container)
+                    uri = space_uri(environ, space)
+                    uri += encode_name(title)
+                    tiddler = _link_tiddler(uri, store,
+                            '%s@%s' % (title, space))
+                except ValueError:
+                    try:
+                        recipe = Recipe(container)
+                        recipe = store.get(recipe)
+                        bag = determine_bag_from_recipe(recipe, tiddler,
+                                environ)
+                        bag_name = bag.name
+                    except StoreError:
+                        bag_name = container
+                    tiddler = Tiddler(title, bag_name)
+                    try:
+                        tiddler = store.get(tiddler)
+                    except StoreError:
+                        # fake the existence of the tiddler
+                        tiddler.store = store
         tiddlers.add(tiddler)
 
     return send_tiddlers(environ, start_response, tiddlers=tiddlers)
+
+
+def _link_tiddler(uri, store, title=None):
+    """
+    Create an artificial tiddler to represent a link.
+    """
+    if not title:
+        title = uri
+    tiddler = Tiddler(title, 'temp')
+    tiddler.text = uri
+    tiddler.fields['_canonical_uri'] = uri
+    tiddler.store = store
+    return tiddler

@@ -160,7 +160,10 @@ class LinksManager(object):
                 if is_link(link):
                     target = link
                 elif space:
-                    target = '%s_public:%s' % (space, link)
+                    if link:
+                        target = '%s_public:%s' % (space, link)
+                    else:
+                        target = '@%s:' % space
                 else:
                     target = '%s:%s' % (tiddler.bag, link)
                 new_link = SLink(source, target)
