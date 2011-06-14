@@ -127,4 +127,5 @@ def test_web_front():
 
     response, content = http.request('http://0.0.0.0:8080/bags/barney/tiddlers/monkey/frontlinks')
 
+    assert response['status'] == '200', content
     assert '<a href="http://cdent.0.0.0.0:8080/">@cdent</a>' in content

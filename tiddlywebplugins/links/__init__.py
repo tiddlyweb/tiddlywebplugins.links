@@ -119,11 +119,12 @@ def _get_links(environ, start_response, linktype):
             tiddler = _link_tiddler(link, store)
         else:
             container, title = link.split(':', 1)
-            if container.startswith('@') and not title:
-                title = container
-                container = container[1:]
-                uri = space_uri(environ, container)
-                tiddler = _link_tiddler(uri, store, title)
+            if not title: #  plain space link
+                if container.startswith('@'):
+                    container = container[1:] + '_public'
+                space = Space.name_from_recipe(container)
+                uri = space_uri(environ, space)
+                tiddler = _link_tiddler(uri, store, '@%s' % space)
             elif title:
                 try:
                     if container == bag_name:
