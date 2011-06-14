@@ -154,7 +154,7 @@ class LinksManager(object):
         source = _tiddler_key(tiddler)
 
         try:
-            for link, space in links:
+            for link, space in set(links):
                 if link is None:
                     link = ''
                 if is_link(link):
