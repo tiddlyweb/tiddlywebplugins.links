@@ -128,3 +128,9 @@ def test_web_front():
     response, content = http.request('http://0.0.0.0:8080/bags/barney/tiddlers/monkey/frontlinks')
 
     assert '<a href="http://cdent.0.0.0.0:8080/">@cdent</a>' in content
+
+def test_web_serialized():
+    http = httplib2.Http()
+    response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks.json')
+
+    assert response['status'] == '200', content
