@@ -160,7 +160,7 @@ def _link_tiddler(uri, store, title=None):
     """
     if not title:
         title = uri
-    tiddler = Tiddler(title, 'temp')
+    tiddler = Tiddler(title, '_temp_linkstore')
     tiddler.text = uri
     tiddler.fields['_canonical_uri'] = uri
     tiddler.store = store
