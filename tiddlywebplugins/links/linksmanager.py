@@ -143,6 +143,7 @@ class LinksManager(object):
             old_links = self.session.query(SLink).filter(
                     SLink.source == source)
             old_links.delete()
+            self.session.commit()
         except:
             self.session.rollback()
             raise
