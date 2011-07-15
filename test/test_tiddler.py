@@ -97,9 +97,9 @@ def test_web_front():
     store.put(tiddler)
 
     http = httplib2.Http()
-    response, content = http.request('http://0.0.0.0:8080/bags/bagone/tiddlers/tiddlerone/frontlinks')
+    response, content = http.request('http://0.0.0.0:8080/bags/bagone/tiddlers/tiddlerone/frontlinks.html')
     assert response['status'] == '200', content
-    assert '<a href="http://cdent.0.0.0.0:8080/NotYou">NotYou@cdent</a>' in content, content
+    assert '<a href="http://cdent.0.0.0.0:8080/NotYou">NotYou</a>' in content, content
     assert '<a href="http://burningchrome.com/">http://burningchrome.com/</a>' in content
 
     bag = Bag('cdent_public')

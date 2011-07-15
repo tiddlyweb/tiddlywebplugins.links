@@ -95,6 +95,13 @@ def _get_links(environ, start_response, linktype):
     filters = environ['tiddlyweb.filters']
     collection_title = '%s for %s' % (linktype, tiddler_title)
 
+    link = environ['SCRIPT_NAME']
+    try:
+        extension = environ['tiddlyweb.extension']
+        link = link.rsplit('.%s' % extension)[0]
+    except KeyError:
+        pass
+
     tiddler = Tiddler(tiddler_title, bag_name)
     try:
         tiddler = store.get(tiddler)
@@ -113,6 +120,7 @@ def _get_links(environ, start_response, linktype):
         tiddlers = Tiddlers(title=collection_title)
     else:
         tiddlers = Tiddlers(title=collection_title, store=store)
+    tiddlers.link = link
 
     for link in links:
         if is_link(link):
@@ -125,15 +133,18 @@ def _get_links(environ, start_response, linktype):
                 space = Space.name_from_recipe(container)
                 uri = space_uri(environ, space)
                 tiddler = _link_tiddler(uri, store, '@%s' % space)
+                tiddler.recipe = container
             elif title:
                 try:
                     if container == bag_name:
                         raise ValueError
                     space = Space.name_from_recipe(container)
+                    tiddler = Tiddler(title)
+                    tiddler.recipe = container
                     uri = space_uri(environ, space)
                     uri += encode_name(title)
-                    tiddler = _link_tiddler(uri, store,
-                            '%s@%s' % (title, space))
+                    tiddler.fields['_canonical_uri'] = uri
+                    tiddler.store = store
                 except ValueError:
                     try:
                         recipe = Recipe(container)
@@ -160,7 +171,7 @@ def _link_tiddler(uri, store, title=None):
     """
     if not title:
         title = uri
-    tiddler = Tiddler(title, '_temp_linkstore')
+    tiddler = Tiddler(title)
     tiddler.text = uri
     tiddler.fields['_canonical_uri'] = uri
     tiddler.store = store
