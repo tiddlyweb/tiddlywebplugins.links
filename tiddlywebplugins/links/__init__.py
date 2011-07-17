@@ -45,7 +45,7 @@ def init(config):
         for bag in store.list_bags():
             logging.debug('updating links for tiddlers in bag: %s', bag.name)
             for tiddler in store.list_bag_tiddlers(bag):
-                tiddler = store.get(tiddler) #  we must get text
+                tiddler = store.get(tiddler)  # we must get text
                 links_manager.delete_links(tiddler)
                 if not tiddler.type or tiddler.type == 'None':
                     links_manager.update_database(tiddler)
@@ -84,8 +84,8 @@ def get_frontlinks(environ, start_response):
 
 def _get_links(environ, start_response, linktype):
     """
-    Form the links as tiddlers and then send them 
-    to send_tiddlers. This allows us to use the 
+    Form the links as tiddlers and then send them
+    to send_tiddlers. This allows us to use the
     serialization and filtering subsystems on the
     lists of links.
     """
@@ -127,7 +127,7 @@ def _get_links(environ, start_response, linktype):
             tiddler = _link_tiddler(link, store)
         else:
             container, title = link.split(':', 1)
-            if not title: #  plain space link
+            if not title:  # plain space link
                 if container.startswith('@'):
                     container = container[1:] + '_public'
                 space = Space.name_from_recipe(container)

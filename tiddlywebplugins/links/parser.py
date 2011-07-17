@@ -16,6 +16,7 @@ HTTP = Regex(URL_PATTERN)('link')
 # space names.
 CONTENT = Or([LINK, WIKIWORD, HTTP, SPACE])
 
+
 def process_in():
     """
     Read stdin, return list of link, space tuples.

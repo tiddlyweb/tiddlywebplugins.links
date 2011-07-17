@@ -28,11 +28,11 @@ class SLink(object):
     but nice for the __repr__.
     """
 
-    def __init__(self, source, target, id=None):
+    def __init__(self, source, target, link_id=None):
         object.__init__(self)
         self.source = source
         self.target = target
-        self.id = None
+        self.id = link_id
 
     def __repr__(self):
         return '<SLink(%s->%s)>' % (self.source, self.target)
