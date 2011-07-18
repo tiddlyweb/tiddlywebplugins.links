@@ -3,6 +3,7 @@ from tiddlywebplugins.links.parser import process_tiddler
 from tiddlywebplugins.links.linksmanager import LinksManager
 
 from tiddlyweb.model.bag import Bag
+from tiddlyweb.model.recipe import Recipe
 from tiddlyweb.model.tiddler import Tiddler
 from tiddlywebplugins.utils import get_store
 from tiddlyweb.config import config
@@ -35,6 +36,10 @@ def setup_module(module):
         return serve.load_app()
     httplib2_intercept.install()
     wsgi_intercept.add_wsgi_intercept('0.0.0.0', 8080, app)
+
+    # for @someone syntax to test correctly we need a corresponding
+    # recipe
+    module.store.put(Recipe('cdent_public'))
 
 
 def test_simple_tiddler():
