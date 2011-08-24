@@ -65,17 +65,17 @@ class LinksManager(object):
         if not ENGINE:
             db_config = self._db_config()
             if 'mysql' in db_config:
-                try:
-                    from tiddlywebplugins.mysql2 import LookLively
-                    listeners = [LookLively()]
-                except ImportError:
-                    listeners = []
                 ENGINE = create_engine(db_config,
                         pool_recycle=3600,
                         pool_size=20,
                         max_overflow=-1,
-                        pool_timeout=2,
-                        listeners=listeners)
+                        pool_timeout=2)
+                try:
+                    from tiddlywebplugins.mysql2 import on_checkout
+                    from sqlalchemy import event
+                    event.listen(ENGINE, 'checkout', on_checkout)
+                except ImportError:
+                    pass
             else:
                 ENGINE = create_engine(db_config)
             METADATA.bind = ENGINE
