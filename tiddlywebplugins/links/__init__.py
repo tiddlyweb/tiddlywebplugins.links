@@ -10,6 +10,8 @@ from tiddlyweb.control import determine_bag_from_recipe
 from tiddlyweb.manage import make_command
 from tiddlyweb.web.util import get_route_value, encode_name
 from tiddlyweb.web.http import HTTP404, HTTP400
+from tiddlyweb.model.bag import Bag
+from tiddlyweb.model.policy import PermissionsError
 from tiddlyweb.model.recipe import Recipe
 from tiddlyweb.model.tiddler import Tiddler
 from tiddlyweb.model.collections import Tiddlers
@@ -160,7 +162,8 @@ def _get_links(environ, start_response, linktype):
                     except StoreError:
                         # fake the existence of the tiddler
                         tiddler.store = store
-        tiddlers.add(tiddler)
+        if _is_readable(environ, tiddler):
+            tiddlers.add(tiddler)
 
     return send_tiddlers(environ, start_response, tiddlers=tiddlers)
 
@@ -176,3 +179,33 @@ def _link_tiddler(uri, store, title=None):
     tiddler.fields['_canonical_uri'] = uri
     tiddler.store = store
     return tiddler
+
+def _is_readable(environ, tiddler):
+    """
+    Return true if recipe.policy read allows, and
+    bag.policy read allows, or if neither bag or recipe
+    is set.
+    """
+    store = environ['tiddlyweb.store']
+    usersign = environ['tiddlyweb.usersign']
+    if tiddler.recipe:
+        try:
+            recipe = store.get(Recipe(tiddler.recipe))
+        except StoreError:
+            return False
+        try:
+            recipe.policy.allows(usersign, 'read')
+        except PermissionsError:
+            return False
+
+    if tiddler.bag:
+        try:
+            bag = store.get(Bag(tiddler.bag))
+        except StoreError:
+            return False
+        try:
+            bag.policy.allows(usersign, 'read')
+        except PermissionsError:
+            return False
+
+    return True
