@@ -121,7 +121,11 @@ def test_web_front():
     assert '<a href="/bags/barney/tiddlers/hello">hello</a>' in content
     assert '<a href="/bags/bagone/tiddlers/tiddlerone">tiddlerone</a>' in content
 
-    store.delete(Tiddler('hello', 'barney'))
+    # Use web delete, not store delete as web delete instantiates the tiddler
+    #store.delete(Tiddler('hello', 'barney'))
+    response, content = http.request('http://0.0.0.0:8080/bags/barney/tiddlers/hello', method='DELETE')
+    assert response['status'] == '204'
+
     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks')
  
     assert '<a href="/bags/barney/tiddlers/hello">hello</a>' not in content

@@ -53,11 +53,9 @@ def init(config):
                     links_manager.update_database(tiddler)
 
 
-def tiddler_change_hook(store, tiddler):
+def tiddler_put_hook(store, tiddler):
     """
     Update the links database with data from this tiddler.
-
-    TODO: work with other renderable types, not just tiddlywiki text.
     """
     links_manager = LinksManager(store.environ)
     links_manager.delete_links(tiddler)
@@ -65,9 +63,17 @@ def tiddler_change_hook(store, tiddler):
         links_manager.update_database(tiddler)
 
 
+def tiddler_delete_hook(store, tiddler):
+    """
+    Remove links data associated with deleted tiddler.
+    """
+    links_manager = LinksManager(store.environ)
+    links_manager.delete_links(tiddler)
+
+
 # Establish hooks
-HOOKS['tiddler']['put'].append(tiddler_change_hook)
-HOOKS['tiddler']['delete'].append(tiddler_change_hook)
+HOOKS['tiddler']['put'].append(tiddler_put_hook)
+HOOKS['tiddler']['delete'].append(tiddler_delete_hook)
 
 
 def get_backlinks(environ, start_response):
