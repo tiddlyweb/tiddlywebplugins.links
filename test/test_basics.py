@@ -63,6 +63,11 @@ def test_freelink_target_spacelink():
 
     assert links[0] == ('FreeLinks', 'cdent-mt')
 
+def test_nonwiki_spacelink():
+    links = process_data('I had not know that this@cdent-mt ought to work.')
+
+    assert links[0] == ('this', 'cdent-mt')
+
 def test_combo():
     links = process_data('All TheTime [[we are]] [[wanting|compound needs]] @things, [[you know]]@cart?')
     assert links[0] == ('TheTime', None)

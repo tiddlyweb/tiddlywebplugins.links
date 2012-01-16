@@ -11,10 +11,12 @@ WIKIWORD = (Regex(r'[A-Z][a-z]+(?:[A-Z][a-z]*)+')('link')
         + Optional(SPACE.leaveWhitespace()))
 LINK = (Literal("[[").suppress() + SkipTo(']]')('link')
         + Literal("]]").suppress() + Optional(SPACE.leaveWhitespace()))
+NONWIKISPACE = Word(alphanums, alphanums)('link') + SPACE.leaveWhitespace()
 HTTP = Regex(URL_PATTERN)('link')
+
 # What we care about in the content are links, or wikiwords, or bare
 # space names.
-CONTENT = Or([LINK, WIKIWORD, HTTP, SPACE])
+CONTENT = Or([LINK, WIKIWORD, HTTP, SPACE, NONWIKISPACE])
 
 
 def process_in():
