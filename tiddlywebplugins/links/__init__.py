@@ -186,6 +186,7 @@ def _link_tiddler(uri, store, title=None):
     tiddler.store = store
     return tiddler
 
+
 def _is_readable(environ, tiddler):
     """
     Return true if recipe.policy read allows, and
