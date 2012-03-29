@@ -71,7 +71,7 @@ class LinksManager(object):
                         max_overflow=-1,
                         pool_timeout=2)
                 try:
-                    from tiddlywebplugins.mysql2 import on_checkout
+                    from tiddlywebplugins.mysql3 import on_checkout
                     from sqlalchemy import event
                     event.listen(ENGINE, 'checkout', on_checkout)
                 except ImportError:
