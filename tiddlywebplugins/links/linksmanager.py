@@ -2,6 +2,9 @@
 Module to contain the LinksManager class.
 """
 
+import warnings
+import MySQLdb
+
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import mapper, sessionmaker, scoped_session
 from sqlalchemy.schema import Table, Column, MetaData
@@ -153,6 +156,8 @@ class LinksManager(object):
         Update the links database.
         """
         source = _tiddler_key(tiddler)
+
+        warnings.simplefilter('error', MySQLdb.Warning)
 
         try:
             for link, space in set(links):
