@@ -6,10 +6,11 @@ but used as a backlinks database.
 
 import logging
 
+from httpexceptor import HTTP404, HTTP400
+
 from tiddlyweb.control import determine_bag_from_recipe
 from tiddlyweb.manage import make_command
 from tiddlyweb.web.util import get_route_value, encode_name
-from tiddlyweb.web.http import HTTP404, HTTP400
 from tiddlyweb.model.bag import Bag
 from tiddlyweb.model.policy import PermissionsError
 from tiddlyweb.model.recipe import Recipe

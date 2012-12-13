@@ -2,7 +2,7 @@ AUTHOR = 'Chris Dent'
 AUTHOR_EMAIL = 'cdent@peermore.com'
 NAME = 'tiddlywebplugins.links'
 DESCRIPTION = 'Maintain a tiddlers links database'
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 
 
 import os
@@ -22,7 +22,8 @@ setup(
     platforms = 'Posix; MacOS X; Windows',
     packages = find_packages(exclude=['test']),
     install_requires = ['setuptools',
-        'tiddlyweb>=1.2.40',
+        'tiddlyweb>=1.3.0',
+        'httpexceptor',
         'sqlalchemy',
         'pyparsing'],
     zip_safe = False
