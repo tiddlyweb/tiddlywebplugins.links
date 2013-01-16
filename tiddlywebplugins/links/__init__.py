@@ -60,8 +60,15 @@ def tiddler_put_hook(store, tiddler):
     """
     links_manager = LinksManager(store.environ)
     links_manager.delete_links(tiddler)
-    if not tiddler.type or tiddler.type == 'None':
+    if _is_parseable(tiddler):
         links_manager.update_database(tiddler)
+
+
+def _is_parseable(tiddler):
+    return (not tiddler.type
+            or tiddler.type == 'None'
+            or tiddler.type == 'text/x-markdown'
+            or tiddler.type == 'text/x-tiddlywiki')
 
 
 def tiddler_delete_hook(store, tiddler):
@@ -111,9 +118,9 @@ def _get_links(environ, start_response, linktype):
     except KeyError:
         pass
 
-    tiddler = Tiddler(tiddler_title, bag_name)
+    host_tiddler = Tiddler(tiddler_title, bag_name)
     try:
-        tiddler = store.get(tiddler)
+        tiddler = store.get(host_tiddler)
     except StoreError, exc:
         raise HTTP404('No such tiddler: %s:%s, %s' % (tiddler.bag,
             tiddler.title, exc))
@@ -121,7 +128,7 @@ def _get_links(environ, start_response, linktype):
     links_manager = LinksManager(environ)
 
     try:
-        links = getattr(links_manager, 'read_%s' % linktype)(tiddler)
+        links = getattr(links_manager, 'read_%s' % linktype)(host_tiddler)
     except AttributeError, exc:
         raise HTTP400('invalid links type: %s' % exc)
 
@@ -131,61 +138,39 @@ def _get_links(environ, start_response, linktype):
         tiddlers = Tiddlers(title=collection_title, store=store)
     tiddlers.link = link
 
+    # continue over entries in database from previous format
     for link in links:
-        if is_link(link):
-            tiddler = _link_tiddler(link, store)
+        if is_link(link):  # external link
+            continue
         else:
             container, title = link.split(':', 1)
             if not title:  # plain space link
-                if container.startswith('@'):
-                    container = container[1:] + '_public'
-                space = Space.name_from_recipe(container)
-                uri = space_uri(environ, space)
-                tiddler = _link_tiddler(uri, store, '@%s' % space)
-                tiddler.recipe = container
+                continue
             elif title:
-                try:
-                    if container == bag_name:
-                        raise ValueError
-                    space = Space.name_from_recipe(container)
-                    tiddler = Tiddler(title)
-                    tiddler.recipe = container
-                    uri = space_uri(environ, space)
-                    uri += encode_name(title)
-                    tiddler.fields['_canonical_uri'] = uri
-                    tiddler.store = store
-                except ValueError:
-                    try:
-                        recipe = Recipe(container)
-                        recipe = store.get(recipe)
-                        bag = determine_bag_from_recipe(recipe, tiddler,
-                                environ)
-                        bag_name = bag.name
-                    except StoreError:
-                        bag_name = container
+                if container != bag_name:
+                    if container.endswith('_public'):
+                        try:
+                            recipe = Recipe(container)
+                            recipe = store.get(recipe)
+                            bag = determine_bag_from_recipe(recipe, tiddler,
+                                    environ)
+                            tiddler = Tiddler(title, bag.name)
+                        except StoreError, exc:
+                            tiddler = Tiddler(title, bag_name)
+                        finally:
+                            tiddler.recipe = container
+                    else:
+                        tiddler = Tiddler(title, container)
+                else:
                     tiddler = Tiddler(title, bag_name)
-                    try:
-                        tiddler = store.get(tiddler)
-                    except StoreError:
-                        # fake the existence of the tiddler
-                        tiddler.store = store
+                try:
+                    tiddler = store.get(tiddler)
+                except StoreError:
+                    tiddler.store = store
         if _is_readable(environ, tiddler):
             tiddlers.add(tiddler)
 
     return send_tiddlers(environ, start_response, tiddlers=tiddlers)
-
-
-def _link_tiddler(uri, store, title=None):
-    """
-    Create an artificial tiddler to represent a link.
-    """
-    if not title:
-        title = uri
-    tiddler = Tiddler(title)
-    tiddler.text = uri
-    tiddler.fields['_canonical_uri'] = uri
-    tiddler.store = store
-    return tiddler
 
 
 def _is_readable(environ, tiddler):

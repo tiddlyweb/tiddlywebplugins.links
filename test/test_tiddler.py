@@ -39,7 +39,10 @@ def setup_module(module):
 
     # for @someone syntax to test correctly we need a corresponding
     # recipe
-    module.store.put(Recipe('cdent_public'))
+    module.store.put(Bag('cdent_public'))
+    recipe = Recipe('cdent_public')
+    recipe.set_recipe([('cdent_public', '')])
+    module.store.put(recipe)
 
 
 def test_simple_tiddler():
@@ -50,6 +53,7 @@ def test_simple_tiddler():
 
     assert links[0] == ('NotYou', None)
     assert links[1] == ('you', None)
+
 
 def test_space_only():
     tiddler = Tiddler('cow', 'barn')
@@ -104,8 +108,7 @@ def test_web_front():
     http = httplib2.Http()
     response, content = http.request('http://0.0.0.0:8080/bags/bagone/tiddlers/tiddlerone/frontlinks.html')
     assert response['status'] == '200', content
-    assert '<a href="http://cdent.0.0.0.0:8080/NotYou">NotYou</a>' in content, content
-    assert '<a href="http://burningchrome.com/">http://burningchrome.com/</a>' in content
+    assert '<a href="/recipes/cdent_public/tiddlers/NotYou">NotYou</a>' in content, content
 
     bag = Bag('cdent_public')
     store.put(bag)
@@ -130,17 +133,21 @@ def test_web_front():
  
     assert '<a href="/bags/barney/tiddlers/hello">hello</a>' not in content
 
-    tiddler = Tiddler('monkey', 'barney')
-    tiddler.text = '@cdent'
-    store.put(tiddler)
-
-    response, content = http.request('http://0.0.0.0:8080/bags/barney/tiddlers/monkey/frontlinks')
-
-    assert response['status'] == '200', content
-    assert '<a href="http://cdent.0.0.0.0:8080/">@cdent</a>' in content
-
 def test_web_serialized():
     http = httplib2.Http()
     response, content = http.request('http://0.0.0.0:8080/bags/cdent_public/tiddlers/NotYou/backlinks.json')
 
     assert response['status'] == '200', content
+
+def test_markdown():
+    tiddler = Tiddler('hi', 'barney')
+    tiddler.text = 'Hi\n==\n\nThis WikiWord and this [[Freelink|freelink]] and this BigOne@cdent in markdown\n'
+    store.put(tiddler)
+
+    http = httplib2.Http()
+    response, content = http.request('http://0.0.0.0:8080/bags/barney/tiddlers/hi/frontlinks')
+
+    assert response['status'] == '200'
+    assert 'href="/bags/barney/tiddlers/WikiWord">WikiWord</a>' in content
+    assert 'href="/bags/barney/tiddlers/freelink">freelink</a>' in content
+    assert 'href="/recipes/cdent_public/tiddlers/BigOne">BigOne</a>' in content
