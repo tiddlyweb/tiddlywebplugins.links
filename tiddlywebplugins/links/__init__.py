@@ -120,10 +120,10 @@ def _get_links(environ, start_response, linktype):
 
     host_tiddler = Tiddler(tiddler_title, bag_name)
     try:
-        tiddler = store.get(host_tiddler)
+        host_tiddler = store.get(host_tiddler)
     except StoreError, exc:
-        raise HTTP404('No such tiddler: %s:%s, %s' % (tiddler.bag,
-            tiddler.title, exc))
+        raise HTTP404('No such tiddler: %s:%s, %s' % (host_tiddler.bag,
+            host_tiddler.title, exc))
 
     links_manager = LinksManager(environ)
 
@@ -152,12 +152,13 @@ def _get_links(environ, start_response, linktype):
                         try:
                             recipe = Recipe(container)
                             recipe = store.get(recipe)
+                            tiddler = Tiddler(title)
+                            tiddler.recipe = container
                             bag = determine_bag_from_recipe(recipe, tiddler,
                                     environ)
-                            tiddler = Tiddler(title, bag.name)
+                            tiddler.bag = bag.name
                         except StoreError, exc:
                             tiddler = Tiddler(title, bag_name)
-                        finally:
                             tiddler.recipe = container
                     else:
                         tiddler = Tiddler(title, container)
