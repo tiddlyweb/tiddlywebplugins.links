@@ -2,7 +2,7 @@ AUTHOR = 'Chris Dent'
 AUTHOR_EMAIL = 'cdent@peermore.com'
 NAME = 'tiddlywebplugins.links'
 DESCRIPTION = 'Maintain a tiddlers links database'
-VERSION = '1.0.2'
+VERSION = '1.0.3'
 
 
 import os
