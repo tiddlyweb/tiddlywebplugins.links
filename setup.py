@@ -25,6 +25,6 @@ setup(
         'tiddlyweb>=1.3.0',
         'httpexceptor',
         'sqlalchemy',
-        'pyparsing'],
+        'pyparsing<2.0.0'],
     zip_safe = False
     )
