@@ -22,7 +22,7 @@ setup(
     platforms = 'Posix; MacOS X; Windows',
     packages = find_packages(exclude=['test']),
     install_requires = ['setuptools',
-        'tiddlyweb>=1.3.0',
+        'tiddlyweb>=1.4.2',
         'httpexceptor',
         'sqlalchemy',
         'pyparsing<2.0.0'],

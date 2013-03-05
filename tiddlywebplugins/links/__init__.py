@@ -28,6 +28,9 @@ from tiddlywebplugins.tiddlyspace.spaces import space_uri
 from tiddlywebplugins.tiddlyspace.space import Space
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 def init(config):
     """
     Add the back and front links handlers.
@@ -46,7 +49,7 @@ def init(config):
 
         links_manager = LinksManager(store.environ)
         for bag in store.list_bags():
-            logging.debug('updating links for tiddlers in bag: %s', bag.name)
+            LOGGER.debug('updating links for tiddlers in bag: %s', bag.name)
             for tiddler in store.list_bag_tiddlers(bag):
                 tiddler = store.get(tiddler)  # we must get text
                 links_manager.delete_links(tiddler)
