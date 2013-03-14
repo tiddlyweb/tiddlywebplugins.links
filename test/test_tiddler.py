@@ -1,4 +1,5 @@
 
+from tiddlywebplugins.links import init
 from tiddlywebplugins.links.parser import process_tiddler
 from tiddlywebplugins.links.linksmanager import LinksManager
 
@@ -43,6 +44,9 @@ def setup_module(module):
     recipe = Recipe('cdent_public')
     recipe.set_recipe([('cdent_public', '')])
     module.store.put(recipe)
+
+    # initialize the hooks
+    init(config)
 
 
 def test_simple_tiddler():
