@@ -75,3 +75,27 @@ def test_combo():
     assert links[2] == ('compound needs', None)
     assert links[3] == (None, 'things')
     assert links[4] == ('you know', 'cart')
+
+def test_markdown_transclusion():
+    links = process_data('oh hi\n{{some tiddler}}\nand other stuff')
+    assert len(links) == 1
+    assert links[0] == ('some tiddler', None)
+
+    links = process_data('{{some tiddler}}\nand other stuff')
+    assert len(links) == 1
+    assert links[0] == ('some tiddler', None)
+
+    links = process_data(' {{some tiddler}}\nand other stuff')
+    assert len(links) == 0
+
+    links = process_data('{{some tiddler}} a\nand other stuff')
+    assert len(links) == 0
+
+    links = process_data('oh hi\n{{some tiddler}}@cow\nand other stuff')
+    assert len(links) == 1
+    assert links[0] == ('some tiddler', 'cow')
+
+    # this is a correct parsing but not actually desired
+    links = process_data('oh hi\n{{some tiddler}}@cow bar\nand other stuff')
+    assert len(links) == 1
+    assert links[0] == (None, 'cow')
