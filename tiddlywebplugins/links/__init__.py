@@ -35,6 +35,10 @@ def init(config):
     """
     Add the back and front links handlers.
     """
+    # Establish hooks
+    HOOKS['tiddler']['put'].append(tiddler_put_hook)
+    HOOKS['tiddler']['delete'].append(tiddler_delete_hook)
+
     if 'selector' in config:
         base = '/bags/{bag_name:segment}/tiddlers/{tiddler_name:segment}'
         config['selector'].add(base + '/backlinks[.{format}]',
@@ -80,11 +84,6 @@ def tiddler_delete_hook(store, tiddler):
     """
     links_manager = LinksManager(store.environ)
     links_manager.delete_links(tiddler)
-
-
-# Establish hooks
-HOOKS['tiddler']['put'].append(tiddler_put_hook)
-HOOKS['tiddler']['delete'].append(tiddler_delete_hook)
 
 
 def get_backlinks(environ, start_response):
