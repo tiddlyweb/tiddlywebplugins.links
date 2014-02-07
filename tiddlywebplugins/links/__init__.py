@@ -10,7 +10,7 @@ from httpexceptor import HTTP404, HTTP400
 
 from tiddlyweb.control import determine_bag_from_recipe
 from tiddlyweb.manage import make_command
-from tiddlyweb.web.util import get_route_value, encode_name
+from tiddlyweb.web.util import get_route_value
 from tiddlyweb.model.bag import Bag
 from tiddlyweb.model.policy import PermissionsError
 from tiddlyweb.model.recipe import Recipe
@@ -23,9 +23,6 @@ from tiddlywebplugins.utils import get_store
 
 from tiddlywebplugins.links.linksmanager import LinksManager
 from tiddlywebplugins.links.parser import is_link
-
-from tiddlywebplugins.tiddlyspace.spaces import space_uri
-from tiddlywebplugins.tiddlyspace.space import Space
 
 
 LOGGER = logging.getLogger(__name__)
