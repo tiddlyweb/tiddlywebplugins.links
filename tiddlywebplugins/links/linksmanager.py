@@ -3,7 +3,11 @@ Module to contain the LinksManager class.
 """
 
 import warnings
-import MySQLdb
+try:
+    import MySQLdb
+    MYSQL_PRESENT = True
+except ImportError:
+    MYSQL_PRESENT = False
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import mapper, sessionmaker, scoped_session
@@ -160,7 +164,8 @@ class LinksManager(object):
         config = self.environ.get('tiddlyweb.config', {})
         at_means_bag = config.get('links.at_means_bag', False)
 
-        warnings.simplefilter('error', MySQLdb.Warning)
+        if MYSQL_PRESENT:
+            warnings.simplefilter('error', MySQLdb.Warning)
 
         try:
             for link, space in set(links):
