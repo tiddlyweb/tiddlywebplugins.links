@@ -26,7 +26,8 @@ def setup_module(module):
         os.unlink('links.db')
     except OSError:
         pass  # not there
-    module.links_manager = LinksManager()
+    environ = {'tiddlyweb.config': config}
+    module.links_manager = LinksManager(environ=environ)
 
     try:
         shutil.rmtree('store')
@@ -101,6 +102,21 @@ def test_stored_with_space():
     backlinks = links_manager.read_backlinks(tiddler)
     assert len(backlinks) == 1, backlinks
     assert 'barney:hello' in backlinks
+
+
+def test_at_means_bag():
+    store.put(Bag('spam'))
+    tiddler = Tiddler('foo', 'spam')
+    tiddler.text = "I am AtCar@cdent, http://burningchrome.com/"
+    config['links.at_means_bag'] = True
+    store.put(tiddler)
+
+    frontlinks = links_manager.read_frontlinks(tiddler)
+    assert len(frontlinks) == 2, frontlinks
+    assert 'cdent:AtCar' in frontlinks
+
+    del config['links.at_means_bag']
+
 
 def test_web_front():
     bag = Bag('bagone')

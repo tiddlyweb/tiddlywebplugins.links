@@ -57,7 +57,7 @@ def init(config):
             for tiddler in store.list_bag_tiddlers(bag):
                 tiddler = store.get(tiddler)  # we must get text
                 links_manager.delete_links(tiddler)
-                if not tiddler.type or tiddler.type == 'None':
+                if _is_parseable(tiddler):
                     links_manager.update_database(tiddler)
 
 

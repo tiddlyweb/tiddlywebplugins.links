@@ -157,6 +157,9 @@ class LinksManager(object):
         """
         source = _tiddler_key(tiddler)
 
+        config = self.environ.get('tiddlyweb.config', {})
+        at_means_bag = config.get('links.at_means_bag', False)
+
         warnings.simplefilter('error', MySQLdb.Warning)
 
         try:
@@ -167,7 +170,10 @@ class LinksManager(object):
                     target = link
                 elif space:
                     if link:
-                        target = '%s_public:%s' % (space, link)
+                        if at_means_bag:
+                            target = '%s:%s' % (space, link)
+                        else:
+                            target = '%s_public:%s' % (space, link)
                     else:
                         target = '@%s:' % space
                 else:
