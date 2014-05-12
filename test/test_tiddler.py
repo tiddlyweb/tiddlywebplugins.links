@@ -115,6 +115,12 @@ def test_at_means_bag():
     assert len(frontlinks) == 2, frontlinks
     assert 'cdent:AtCar' in frontlinks
 
+    tiddler.text = "I am [[front man]]@[[back bag]], you know?"
+    store.put(tiddler)
+    frontlinks = links_manager.read_frontlinks(tiddler)
+    assert len(frontlinks) == 1, frontlinks
+    assert 'back bag:front man' in frontlinks
+
     del config['links.at_means_bag']
 
 

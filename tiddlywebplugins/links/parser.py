@@ -8,7 +8,12 @@ from pyparsing import (Literal, Word, alphanums, Regex, Optional, SkipTo,
 ### Establish Parser Rules
 URL_PATTERN = r"(?:file|http|https|mailto|ftp|irc|news|data):[^\s'\"]+(?:/|\b)"
 
-SPACE = (Literal('@').suppress() + Word(alphanums, alphanums + '-'))('space')
+UNSPACED_TARGET = Word(alphanums, alphanums + '-')
+SPACED_TARGET = (Literal('[[').suppress() + SkipTo(']]')
+        + Literal(']]').suppress())
+
+SPACE = (Literal('@').suppress() + Or([UNSPACED_TARGET,
+    SPACED_TARGET]))('space')
 
 WIKIWORD = (Regex(r'[A-Z][a-z]+(?:[A-Z][a-z]*)+')('link')
         + Optional(SPACE.leaveWhitespace()))
