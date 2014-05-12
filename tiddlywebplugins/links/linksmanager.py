@@ -186,7 +186,7 @@ class LinksManager(object):
                 new_link = SLink(source, target)
                 self.session.add(new_link)
                 self.session.commit()
-        except MySQLdb.Warning, exc:
+        except MySQLdb.Warning:
             self.session.rollback()
             pass
         except:
